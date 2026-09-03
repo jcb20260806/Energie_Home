@@ -1,0 +1,174 @@
+---
+
+output:
+  html_document:
+    df_print: paged
+  pdf_document: default
+---
+Fichier: `r get(env = parent.frame(n = 8), 'input')`
+```{r setup, include=FALSE, eval=TRUE,results='hide',message=FALSE,warning=FALSE}
+
+
+
+knitr::opts_chunk$set(echo = TRUE)
+options(knitr.table.format = "html")
+# delete all objects and garbage collection	
+rm(list = ls(all.names = TRUE))
+gc()
+
+#source("../R_Lib/Header_Lib_For_Solar.r")
+#
+#library(lubridate)
+library(ggplot2)
+library(dplyr)
+
+library(stringr)
+#library(magrittr)
+
+
+CWD<-getwd() # Ger Current Dir
+PrjDir <- usefun::get_parent_dir(CWD) # Get Dir du projet pycharm c'est la racine du projet
+```
+
+Nom de ce Script R: `r get(env = parent.frame(n = 8), 'input')`<br>
+Path du Projet PyCharm: r PrjDir<br>
+
+
+#ezknit( file = "./rmd-Eau_Elec_2021-11-19.Rmd",out_dir = "reports", fig_dir = "myfigs")
+
+
+```{r Librairies et Sources et Paramètres, echo=FALSE,eval=TRUE,message=FALSE,warning=FALSE}
+source("/mnt/INPG0721onHP/2022-09-PyCharm-Prj/Eau-Elec-Home-22/0-P3-Eau_Elec_Home/R_Lib/Elect_Eau_R_Lib.R")
+ #       /mnt/INPG0721onHP/2022-09-PyCharm-Prj/Eau-Elec-Home-22/0-P3-Eau_Elec_Home/Appli_R
+source("/mnt/INPG0721onHP/2022-09-PyCharm-Prj/Eau-Elec-Home-22/0-P3-Eau_Elec_Home/R_Lib/Mazout_R_Lib.R")
+ThisAppliDBs<-"/mnt/INPGO721onHP/2022-09-PyCharm-Prj/Eau-Elec-Home-22/0-P3-Eau_Elec_Home/Index_dbs.py"
+# db codées avant de faire mieux"
+# Haut=Nuit Bas=Jour
+RootDir<-"/mnt/INPG0721onHP/2022-09-PyCharm-Prj/Eau-Elec-Home-22/0-P3-Eau_Elec_Home"
+dbEau="/Eau/db/Index-DB.sql"
+dbJour="/Electricité-Bas/db/Index-DB.sql"
+dbNuit="/Electricité-Haut/db/Index-DB.sql"
+dbPisc="/Electricité-Piscine/db/Index-DB.sql"
+dbMazout="/mnt/INPG0721onHP/2022-09-PyCharm-Prj/Mazout-24-09-28/db/Mazout-DB.sql"
+dbSolar="/SolarEdge/db/Index-DB.sql"
+AllCSVFileName="/Log_Energie.csv"
+```
+```{r Get and Prepare Data, echo=FALSE,eval=TRUE,message=FALSE,warning=FALSE}
+Solar<-jcbGetAllPts(paste(RootDir,sep="",dbSolar))
+Solar$Date <- as.Date(Solar$Date, "%d/%m/%Y")
+Solar$DofY<-lubridate::yday(Solar$Date)
+AllEnergiePath <- paste(RootDir,AllCSVFileName,sep="")
+print(AllEnergiePath)
+#/mnt/INPG0721onHP/2022-09-PyCharm-Prj/Eau-Elec-Home-22/0-P3-Eau_Elec_Home
+AllEnergie <- read.csv(AllEnergiePath, header = TRUE,      # première ligne = noms de colonnes
+                 sep = ",",          # séparateur ("," par défaut)
+                 stringsAsFactors = FALSE)
+library(lubridate)
+#AllEnergie <- AllEnergie %>% select(-c(X))
+AllEnergie$TimeStamp <-dmy_hm(paste(AllEnergie$Date, AllEnergie$Heure))
+library(dplyr)
+ConsoAnnuelle <- function(Test){
+  TestM1 <- lag(Test,1) 
+  TestM1 <- tail(TestM1,nrow(TestM1)-1)
+  Test <- tail(Test,nrow(Test)-1)
+  Test$DeltaConso <-Test$Index - TestM1$Index 
+  Test$DeltaTS <-Test$TimeStamp - TestM1$TimeStamp
+  Test <- Test %>% mutate(Annuel = DeltaConso*365.25/as.numeric(DeltaTS))
+  Test <- Test %>% select(c(TimeStamp,Energie,Annuel))
+  return(Test)
+}
+#
+
+# Je sélectionne ce qui m' intéresse
+Electricite <- AllEnergie %>% filter (Energie %in% c("CJour","CNuit","PJour","PNuit")) 
+# on fait une liste de DF
+liste_Electricite <- Electricite %>%  group_by(Energie) %>% group_split()
+# on calcule les"Annuels" sur tous les df : applique la fonction CosoAnuelle à tous les df de la liste
+liste_Electricite <- lapply(liste_Electricite, ConsoAnnuelle)
+
+names(liste_Electricite) <- c("CJour","CNuit","PJour","PNuit")
+
+
+```
+<br>
+Ce graphique implique que les index sont notés en même temps
+Ce Graphique montre les Productions et Consommations Electriques au mois le mois ramenées à l' année et lissées: ça montre une idée des valeurs "instantanées"
+<br><br>
+
+```{r PlotElectricité, echo=FALSE,eval=TRUE,message=FALSE,warning=FALSE}
+# On prépare les data pour le plot - DFAll contient les " Annuel"
+DF_all <- bind_rows(liste_Electricite, .id = "Source")
+gg <- ggplot(DF_all, aes(x = TimeStamp, y = Annuel, color = Source)) +
+  #geom_line() +
+  geom_smooth(se = FALSE, method = "loess") +
+  scale_x_date(date_breaks = "1 month", date_labels = "%Y-%m-%d") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+labs(title = "Consommation et Injection Instantanée Au Jour le Jour normalisée à 365,25 Jours")
+(gg)
+
+```
+Le graphique représente la différence Consomation-Injection au jour le jour normalisé Annuel
+```{r Production moins Consommation, echo=FALSE,eval=TRUE,message=FALSE,warning=FALSE}
+# On va chercher "Jour" et "Nuit"
+CJour <- liste_Electricite[["CJour"]] 
+PJour <- liste_Electricite[["PJour"]] 
+CNuit <- liste_Electricite[["CNuit"]] 
+PNuit <- liste_Electricite[["PNuit"]] 
+# Conso Nette = Consommé - Produit
+ConsoJour <- left_join(CJour, PJour, by = "TimeStamp") %>% mutate ( ConsoNetJour = Annuel.x - Annuel.y)
+ConsoNuit <- left_join(CNuit, PNuit, by = "TimeStamp") %>% mutate ( ConsoNetNuit = Annuel.x - Annuel.y)
+ConsoGlob <- left_join(ConsoJour,ConsoNuit, by="TimeStamp")%>% mutate ( ConsoGlob = ConsoNetJour + ConsoNetNuit)
+
+
+
+gg <- ggplot() +
+  geom_smooth(data = ConsoGlob, aes(x = TimeStamp, y = ConsoGlob, color = "Global Net"),method = "loess", se = FALSE) +
+  geom_smooth(data = ConsoJour, aes(x = TimeStamp, y = ConsoNetJour, color = "Jour Net"),method = "loess", se = FALSE) +
+  geom_smooth(data = ConsoNuit, aes(x = TimeStamp, y = ConsoNetNuit, color = "Nuit Net"),method = "loess", se = FALSE) +
+  labs(title = "Consommation Nette Au Jour le Jour normalisée à 365,25 Jours")+
+scale_x_date(date_breaks = "1 month", date_labels = "%Y-%m-%d") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+(gg)
+
+
+
+
+```
+```{r Projection Annuelle par Moyenne Mobile, echo=FALSE,eval=TRUE,message=FALSE,warning=FALSE}
+# pour la projection annuelle, je vais prendre la moyenne mobile des valeurs normalisées sur les 365 derniers jours.
+# pour identifier la première valeur à prendre en compte, on va chercher le dernier jour moins 365,25
+# on va prendre 
+# si on en trouve pas on prend comme range la moitié de ce que l' on.
+# Dans une première phase on pren la myenne mofile simnpla première valeur
+# ici on travaille sur ConsoGlob
+ConsoGlob <- ConsoGlob %>% mutate(Date0 = as.Date(TimeStamp) )
+Last_Date <- max(ConsoGlob$Date0)
+First_Date <- min(ConsoGlob$Date0)
+Index_de_ANM1 <- which(ConsoGlob$Date0 == (Last_Date - 732))[1]
+MeanRange <- ifelse (is.na(Index_de_ANM1), as.integer(nrow(ConsoGlob)/2),as.integer( nrow(ConsoGlob) - Index_de_ANM1/2))
+library(zoo)
+
+ConsoGlob <- ConsoGlob %>% mutate(GlobMM =  rollmean(ConsoGlob, k = MeanRange, fill = NA, align = "right")) %>%
+  mutate(JourMM =  rollmean(ConsoNetJour, k = MeanRange, fill = NA, align = "right")) %>%
+  mutate( NuitMM = rollmean(ConsoNetNuit, MeanRange, fill = NA, align = "right"))
+                    
+
+
+
+
+#gg <- gg + #ggplot() +
+  gg <- ggplot() +
+  
+  geom_line(data = ConsoGlob, aes(x = TimeStamp, y = GlobMM, color = "Global Mobile")) +
+  geom_line(data = ConsoGlob, aes(x = TimeStamp, y = JourMM, color = "Jour Mobile")) +
+  geom_line(data = ConsoGlob, aes(x = TimeStamp, y = NuitMM, color = "Nuit Mobile")) +
+  labs(title = "Moyennes Mobiles") +
+  scale_x_date(date_breaks = "1 month", date_labels = "%Y-%m-%d") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+(gg)
+
+
+
+
+```
+
