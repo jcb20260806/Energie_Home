@@ -1,10 +1,17 @@
 ---
+title: "`r paste('Synthèse des Consommations d Energie',format(Sys.time(), '%d/%m/%Y'),'.',sep=' ',collapse = NULL)`"
+author: "jcb"
+date: "`r paste('Document mis à jour le ',format(Sys.time(), '%d/%m/%Y %H:%M:%S'),sep=' ',collapse = NULL)`"
 
 output:
   html_document:
     df_print: paged
   pdf_document: default
+  output_dir: "../rapports"
+
+
 ---
+
 Fichier: `r get(env = parent.frame(n = 8), 'input')`
 ```{r setup, include=FALSE, eval=TRUE,results='hide',message=FALSE,warning=FALSE}
 
@@ -166,8 +173,16 @@ ConsoGlob <- ConsoGlob %>% mutate(GlobMM =  rollmean(ConsoGlob, k = MeanRange, f
   scale_x_date(date_breaks = "1 month", date_labels = "%Y-%m-%d") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 (gg)
+  
+  jcbcmd <-paste("cd ",CWD)
+  jcbmove <- paste("cp ",CWD,"*.html/", CWD,"/Rapports",sep="")
+  system (jcbmove)
+  
 
-
+```
+```{bash}
+ls -l
+```
 
 
 ```
