@@ -7,9 +7,7 @@ output:
   html_document:
     df_print: paged
   pdf_document: default
-  output_dir: "../rapports"
-
-
+  
 ---
 
 Fichier: `r get(env = parent.frame(n = 8), 'input')`
@@ -35,6 +33,14 @@ library(stringr)
 
 CWD<-getwd() # Ger Current Dir
 PrjDir <- usefun::get_parent_dir(CWD) # Get Dir du projet pycharm c'est la racine du projet
+jcbMove <- function(OutPutDir= "/Rapports"){
+  # Fonction pour mettre les rapports dans un dossier à part "/Rapports"
+  jcbmove <- paste("mv -f ",CWD,"/*.html ", CWD,OutPutDir,sep="")
+  (jcbmove)
+  system (jcbmove)
+}
+# j" je déplace le fichier de l' exécution précédente
+jcbMove()
 ```
 
 Nom de ce Script R: `r get(env = parent.frame(n = 8), 'input')`<br>
@@ -174,16 +180,8 @@ ConsoGlob <- ConsoGlob %>% mutate(GlobMM =  rollmean(ConsoGlob, k = MeanRange, f
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 (gg)
   
-  jcbcmd <-paste("cd ",CWD)
-  jcbmove <- paste("cp ",CWD,"*.html/", CWD,"/Rapports",sep="")
-  system (jcbmove)
-  
-
-```
-```{bash}
-ls -l
 ```
 
+      ...oooOOOooo...
 
-```
 
