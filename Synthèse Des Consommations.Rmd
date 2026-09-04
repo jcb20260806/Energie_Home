@@ -7,29 +7,14 @@ output:
   html_document:
     df_print: paged
   pdf_document: default
-  
 ---
 
-Fichier: `r get(env = parent.frame(n = 8), 'input')`
 ```{r setup, include=FALSE, eval=TRUE,results='hide',message=FALSE,warning=FALSE}
-
-
-
 knitr::opts_chunk$set(echo = TRUE)
 options(knitr.table.format = "html")
 # delete all objects and garbage collection	
 rm(list = ls(all.names = TRUE))
 gc()
-
-#source("../R_Lib/Header_Lib_For_Solar.r")
-#
-#library(lubridate)
-library(ggplot2)
-library(dplyr)
-
-library(stringr)
-#library(magrittr)
-
 
 CWD<-getwd() # Ger Current Dir
 PrjDir <- usefun::get_parent_dir(CWD) # Get Dir du projet pycharm c'est la racine du projet
@@ -41,10 +26,21 @@ jcbMove <- function(OutPutDir= "/Rapports"){
 }
 # j" je déplace le fichier de l' exécution précédente
 jcbMove()
+
+```
+Fichier: `r get(env = parent.frame(n = 8), 'input')`
+Nom de ce Script R: `r get(env = parent.frame(n = 8), 'input')`<br>
+Path du Projet PyCharm: `r PrjDir`<br>
+```{r Librairies, include=FALSE, eval=TRUE,results='hide',message=FALSE,warning=FALSE}
+#source("../R_Lib/Header_Lib_For_Solar.r")
+#
+#library(lubridate)
+library(ggplot2)
+library(dplyr)
+library(stringr)
 ```
 
-Nom de ce Script R: `r get(env = parent.frame(n = 8), 'input')`<br>
-Path du Projet PyCharm: r PrjDir<br>
+
 
 
 #ezknit( file = "./rmd-Eau_Elec_2021-11-19.Rmd",out_dir = "reports", fig_dir = "myfigs")
