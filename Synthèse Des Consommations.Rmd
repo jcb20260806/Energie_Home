@@ -38,26 +38,12 @@ Path du Projet PyCharm: `r PrjDir`<br>
 library(ggplot2)
 library(dplyr)
 library(stringr)
-```
 
-
-
-
-#ezknit( file = "./rmd-Eau_Elec_2021-11-19.Rmd",out_dir = "reports", fig_dir = "myfigs")
-
-
-```{r Librairies et Sources et Paramètres, echo=FALSE,eval=TRUE,message=FALSE,warning=FALSE}
+```{r Sources et Paramètres, echo=FALSE,eval=TRUE,message=FALSE,warning=FALSE}
 source("/mnt/INPG0721onHP/2022-09-PyCharm-Prj/Eau-Elec-Home-22/0-P3-Eau_Elec_Home/R_Lib/Elect_Eau_R_Lib.R")
  #       /mnt/INPG0721onHP/2022-09-PyCharm-Prj/Eau-Elec-Home-22/0-P3-Eau_Elec_Home/Appli_R
 source("/mnt/INPG0721onHP/2022-09-PyCharm-Prj/Eau-Elec-Home-22/0-P3-Eau_Elec_Home/R_Lib/Mazout_R_Lib.R")
-ThisAppliDBs<-"/mnt/INPGO721onHP/2022-09-PyCharm-Prj/Eau-Elec-Home-22/0-P3-Eau_Elec_Home/Index_dbs.py"
-# db codées avant de faire mieux"
-# Haut=Nuit Bas=Jour
 RootDir<-"/mnt/INPG0721onHP/2022-09-PyCharm-Prj/Eau-Elec-Home-22/0-P3-Eau_Elec_Home"
-dbEau="/Eau/db/Index-DB.sql"
-dbJour="/Electricité-Bas/db/Index-DB.sql"
-dbNuit="/Electricité-Haut/db/Index-DB.sql"
-dbPisc="/Electricité-Piscine/db/Index-DB.sql"
 dbMazout="/mnt/INPG0721onHP/2022-09-PyCharm-Prj/Mazout-24-09-28/db/Mazout-DB.sql"
 dbSolar="/SolarEdge/db/Index-DB.sql"
 AllCSVFileName="/Log_Energie.csv"
