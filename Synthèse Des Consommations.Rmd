@@ -58,7 +58,8 @@ ConsoAnnuelle <- function(Test){
   Test <- tail(Test,nrow(Test)-1)
   Test$DeltaConso <- Test$Index - TestM1$Index
   Test$DeltaTS <- difftime(Test$TimeStamp, TestM1$TimeStamp, units = "days")
-  Test <- Test %>% mutate(Annuel = DeltaConso*365.25/as.numeric(DeltaTS))
+ # Test <- Test %>% mutate(Annuel = DeltaConso*365.25/as.numeric(DeltaTS))
+  Test <- Test %>% mutate(Annuel = DeltaConso/as.numeric(DeltaTS))
   Test <- Test %>% select(c(TimeStamp,Energie,Annuel))
   return(Test)
 }
