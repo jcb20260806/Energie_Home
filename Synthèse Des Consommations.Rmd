@@ -47,19 +47,31 @@ AllCSVFileName="./Log_Energie.csv"
 ```{r Get and Prepare Data, echo=FALSE,eval=TRUE,message=FALSE,warning=FALSE}
 AllEnergie <- read.csv(AllCSVFileName, header = TRUE,      # première ligne = noms de colonnes
                  sep = ",",          # séparateur ("," par défaut)
-                 stringsAsFactors = FALSE)
+                 stringsAsFactors = FALSE,
+                 colClasses = "character") # toutes les valeurs sont des caractères
 AllEnergie$TimeStamp <-dmy_hm(paste(AllEnergie$Date, AllEnergie$Heure))
+AllEnergie$Index = as.numeric(AllEnergie$Index)
+
 ConsoAnnuelle <- function(Test){
   TestM1 <- lag(Test,1) 
   TestM1 <- tail(TestM1,nrow(TestM1)-1)
   Test <- tail(Test,nrow(Test)-1)
-  Test$DeltaConso <-Test$Index - TestM1$Index 
-  Test$DeltaTS <-Test$TimeStamp - TestM1$TimeStamp
+  Test$DeltaConso <- Test$Index - TestM1$Index
+  Test$DeltaTS <- difftime(Test$TimeStamp, TestM1$TimeStamp, units = "days")
   Test <- Test %>% mutate(Annuel = DeltaConso*365.25/as.numeric(DeltaTS))
   Test <- Test %>% select(c(TimeStamp,Energie,Annuel))
   return(Test)
 }
 #
+```
+```{r Evolution Eau, echo=FALSE,eval=TRUE,message=FALSE,warning=FALSE}
+Eau <- AllEnergie %>% filter (Energie %in% c("Eau")) 
+ConsoEau <- ConsoAnnuelle(Eau)
+
+```
+```{r Evolution Electricité, echo=FALSE,eval=TRUE,message=FALSE,warning=FALSE}
+AllCSVFileName="./Log_Energie.csv"
+
 
 # Je sélectionne ce qui m' intéresse
 Electricite <- AllEnergie %>% filter (Energie %in% c("CJour","CNuit","PJour","PNuit")) 
