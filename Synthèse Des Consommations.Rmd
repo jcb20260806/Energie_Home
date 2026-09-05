@@ -38,30 +38,17 @@ Path du Projet PyCharm: `r PrjDir`<br>
 library(ggplot2)
 library(dplyr)
 library(stringr)
+library(lubridate)
+```
 
 ```{r Sources et Paramètres, echo=FALSE,eval=TRUE,message=FALSE,warning=FALSE}
-source("/mnt/INPG0721onHP/2022-09-PyCharm-Prj/Eau-Elec-Home-22/0-P3-Eau_Elec_Home/R_Lib/Elect_Eau_R_Lib.R")
- #       /mnt/INPG0721onHP/2022-09-PyCharm-Prj/Eau-Elec-Home-22/0-P3-Eau_Elec_Home/Appli_R
-source("/mnt/INPG0721onHP/2022-09-PyCharm-Prj/Eau-Elec-Home-22/0-P3-Eau_Elec_Home/R_Lib/Mazout_R_Lib.R")
-RootDir<-"/mnt/INPG0721onHP/2022-09-PyCharm-Prj/Eau-Elec-Home-22/0-P3-Eau_Elec_Home"
-dbMazout="/mnt/INPG0721onHP/2022-09-PyCharm-Prj/Mazout-24-09-28/db/Mazout-DB.sql"
-dbSolar="/SolarEdge/db/Index-DB.sql"
-AllCSVFileName="/Log_Energie.csv"
+AllCSVFileName="./Log_Energie.csv"
 ```
 ```{r Get and Prepare Data, echo=FALSE,eval=TRUE,message=FALSE,warning=FALSE}
-Solar<-jcbGetAllPts(paste(RootDir,sep="",dbSolar))
-Solar$Date <- as.Date(Solar$Date, "%d/%m/%Y")
-Solar$DofY<-lubridate::yday(Solar$Date)
-AllEnergiePath <- paste(RootDir,AllCSVFileName,sep="")
-print(AllEnergiePath)
-#/mnt/INPG0721onHP/2022-09-PyCharm-Prj/Eau-Elec-Home-22/0-P3-Eau_Elec_Home
-AllEnergie <- read.csv(AllEnergiePath, header = TRUE,      # première ligne = noms de colonnes
+AllEnergie <- read.csv(AllCSVFileName, header = TRUE,      # première ligne = noms de colonnes
                  sep = ",",          # séparateur ("," par défaut)
                  stringsAsFactors = FALSE)
-library(lubridate)
-#AllEnergie <- AllEnergie %>% select(-c(X))
 AllEnergie$TimeStamp <-dmy_hm(paste(AllEnergie$Date, AllEnergie$Heure))
-library(dplyr)
 ConsoAnnuelle <- function(Test){
   TestM1 <- lag(Test,1) 
   TestM1 <- tail(TestM1,nrow(TestM1)-1)
