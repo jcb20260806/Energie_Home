@@ -77,7 +77,19 @@ ConsoAnnuelle <- function(Test){
 ```
 ```{r Evolution Eau, echo=FALSE,eval=TRUE,message=FALSE,warning=FALSE}
 Eau <- AllEnergie %>% filter (Energie %in% c("Eau")) 
-ConsoEau <- ConsoAnnuelle(Eau)
+ConsoEau <- tail ( ConsoAnnuelle(Eau), 24)
+ConsoPrévue <- round((tail(ConsoEau$Annuel,1) ),0)
+gg <- ggplot() +
+geom_line(data = ConsoEau, aes(x = TimeStamp, y = Annuel, color = "Global Mobile")) +
+  #geom_line(data = ConsoEau, aes(x = TimeStamp, y = Annuel, color = "Prévision Annuelle")) +
+  geom_line(data = ConsoEau, aes(x = TimeStamp, y = Journalier, color = "Journalier")) +
+  labs(title = paste( "Eau - Consommation Projetée - m3: ", ConsoPrévue) )+
+  scale_x_date(date_breaks = "1 month", date_labels = "%Y-%m-%d") +
+  labs(y = "m3") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+  
+(gg)
+  
 
 ```
 ```{r Evolution Electricité, echo=FALSE,eval=TRUE,message=FALSE,warning=FALSE}
