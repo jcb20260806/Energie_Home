@@ -70,7 +70,7 @@ ConsoAnnuelle <- function(Test){
                               mutate (Annuel =( Index- IndexYM1)*365/DeltaT)
   # Journalier = consommation courante amenée à 365 jours
   # Annuel = Delta Index à Year moins 1
-  OutPut <- Test2 %>% select(c(Date,Energie,Journalier,Annuel))
+  OutPut <- Test2 %>% select(c(TimeStamp,Energie,Journalier,Annuel))
   return(OutPut)
 }
 #
