@@ -93,9 +93,6 @@ geom_line(data = ConsoEau, aes(x = TimeStamp, y = Annuel, color = "Global Mobile
 
 ```
 ```{r Evolution Electricité, echo=FALSE,eval=TRUE,message=FALSE,warning=FALSE}
-AllCSVFileName="./Log_Energie.csv"
-
-
 # Je sélectionne ce qui m' intéresse
 Electricite <- AllEnergie %>% filter (Energie %in% c("CJour","CNuit","PJour","PNuit")) 
 # on fait une liste de DF
