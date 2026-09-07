@@ -1,5 +1,5 @@
 ---
-title: "`r paste('Synthèse des Consommations d Energie',format(Sys.time(), '%d/%m/%Y'),'.',sep=' ',collapse = NULL)`"
+title: "`r paste('Synthèse des Consommations d Energie v02',format(Sys.time(), '%d/%m/%Y'),'.',sep=' ',collapse = NULL)`"
 author: "jcb"
 date: "`r paste('Document mis à jour le ',format(Sys.time(), '%d/%m/%Y %H:%M:%S'),sep=' ',collapse = NULL)`"
 
