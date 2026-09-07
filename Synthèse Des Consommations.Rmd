@@ -7,29 +7,14 @@ output:
   html_document:
     df_print: paged
   pdf_document: default
-  
 ---
 
-Fichier: `r get(env = parent.frame(n = 8), 'input')`
 ```{r setup, include=FALSE, eval=TRUE,results='hide',message=FALSE,warning=FALSE}
-
-
-
 knitr::opts_chunk$set(echo = TRUE)
 options(knitr.table.format = "html")
 # delete all objects and garbage collection	
 rm(list = ls(all.names = TRUE))
 gc()
-
-#source("../R_Lib/Header_Lib_For_Solar.r")
-#
-#library(lubridate)
-library(ggplot2)
-library(dplyr)
-
-library(stringr)
-#library(magrittr)
-
 
 CWD<-getwd() # Ger Current Dir
 PrjDir <- usefun::get_parent_dir(CWD) # Get Dir du projet pycharm c'est la racine du projet
@@ -41,56 +26,75 @@ jcbMove <- function(OutPutDir= "/Rapports"){
 }
 # j" je déplace le fichier de l' exécution précédente
 jcbMove()
+
+```
+Fichier: `r get(env = parent.frame(n = 8), 'input')`
+Nom de ce Script R: `r get(env = parent.frame(n = 8), 'input')`<br>
+Path du Projet PyCharm: `r PrjDir`<br>
+```{r Librairies, include=FALSE, eval=TRUE,results='hide',message=FALSE,warning=FALSE}
+#source("../R_Lib/Header_Lib_For_Solar.r")
+#
+#library(lubridate)
+library(ggplot2)
+library(dplyr)
+library(stringr)
+library(lubridate)
 ```
 
-Nom de ce Script R: `r get(env = parent.frame(n = 8), 'input')`<br>
-Path du Projet PyCharm: r PrjDir<br>
-
-
-#ezknit( file = "./rmd-Eau_Elec_2021-11-19.Rmd",out_dir = "reports", fig_dir = "myfigs")
-
-
-```{r Librairies et Sources et Paramètres, echo=FALSE,eval=TRUE,message=FALSE,warning=FALSE}
-source("/mnt/INPG0721onHP/2022-09-PyCharm-Prj/Eau-Elec-Home-22/0-P3-Eau_Elec_Home/R_Lib/Elect_Eau_R_Lib.R")
- #       /mnt/INPG0721onHP/2022-09-PyCharm-Prj/Eau-Elec-Home-22/0-P3-Eau_Elec_Home/Appli_R
-source("/mnt/INPG0721onHP/2022-09-PyCharm-Prj/Eau-Elec-Home-22/0-P3-Eau_Elec_Home/R_Lib/Mazout_R_Lib.R")
-ThisAppliDBs<-"/mnt/INPGO721onHP/2022-09-PyCharm-Prj/Eau-Elec-Home-22/0-P3-Eau_Elec_Home/Index_dbs.py"
-# db codées avant de faire mieux"
-# Haut=Nuit Bas=Jour
-RootDir<-"/mnt/INPG0721onHP/2022-09-PyCharm-Prj/Eau-Elec-Home-22/0-P3-Eau_Elec_Home"
-dbEau="/Eau/db/Index-DB.sql"
-dbJour="/Electricité-Bas/db/Index-DB.sql"
-dbNuit="/Electricité-Haut/db/Index-DB.sql"
-dbPisc="/Electricité-Piscine/db/Index-DB.sql"
-dbMazout="/mnt/INPG0721onHP/2022-09-PyCharm-Prj/Mazout-24-09-28/db/Mazout-DB.sql"
-dbSolar="/SolarEdge/db/Index-DB.sql"
-AllCSVFileName="/Log_Energie.csv"
+```{r Sources et Paramètres, echo=FALSE,eval=TRUE,message=FALSE,warning=FALSE}
+AllCSVFileName="./Log_Energie.csv"
 ```
 ```{r Get and Prepare Data, echo=FALSE,eval=TRUE,message=FALSE,warning=FALSE}
-Solar<-jcbGetAllPts(paste(RootDir,sep="",dbSolar))
-Solar$Date <- as.Date(Solar$Date, "%d/%m/%Y")
-Solar$DofY<-lubridate::yday(Solar$Date)
-AllEnergiePath <- paste(RootDir,AllCSVFileName,sep="")
-print(AllEnergiePath)
-#/mnt/INPG0721onHP/2022-09-PyCharm-Prj/Eau-Elec-Home-22/0-P3-Eau_Elec_Home
-AllEnergie <- read.csv(AllEnergiePath, header = TRUE,      # première ligne = noms de colonnes
+AllEnergie <- read.csv(AllCSVFileName, header = TRUE,      # première ligne = noms de colonnes
                  sep = ",",          # séparateur ("," par défaut)
-                 stringsAsFactors = FALSE)
-library(lubridate)
-#AllEnergie <- AllEnergie %>% select(-c(X))
+                 stringsAsFactors = FALSE,
+                 colClasses = "character") # toutes les valeurs sont des caractères
 AllEnergie$TimeStamp <-dmy_hm(paste(AllEnergie$Date, AllEnergie$Heure))
-library(dplyr)
+AllEnergie$Index = as.numeric(AllEnergie$Index)
+
 ConsoAnnuelle <- function(Test){
   TestM1 <- lag(Test,1) 
   TestM1 <- tail(TestM1,nrow(TestM1)-1)
   Test <- tail(Test,nrow(Test)-1)
-  Test$DeltaConso <-Test$Index - TestM1$Index 
-  Test$DeltaTS <-Test$TimeStamp - TestM1$TimeStamp
-  Test <- Test %>% mutate(Annuel = DeltaConso*365.25/as.numeric(DeltaTS))
-  Test <- Test %>% select(c(TimeStamp,Energie,Annuel))
-  return(Test)
+  Test$DeltaConso <- Test$Index - TestM1$Index
+  Test$DeltaTS <- difftime(Test$TimeStamp, TestM1$TimeStamp, units = "days")
+  Test <- Test %>% mutate(Journalier = DeltaConso*365.25/as.numeric(DeltaTS))
+  Test <- Test %>% arrange(TimeStamp) %>%
+            # on trouve l'index un an plus tôt
+            mutate(timestamp_cible = TimeStamp %m-% years(1), idx = findInterval(timestamp_cible, TimeStamp) -1) 
+  # get Y moins 1
+  Test2 <- Test %>% filter (idx > 0 )
+  Test2$YM1 <- Test[Test2$idx,"TimeStamp"]
+  Test2$IndexYM1 <- Test[Test2$idx,"Index"] 
+  Test2 <- Test2 %>% mutate ( DeltaT = as.numeric(TimeStamp-YM1) ) %>% 
+                              mutate (Annuel =( Index- IndexYM1)*365/DeltaT)
+  # Journalier = consommation courante amenée à 365 jours
+  # Annuel = Delta Index à Year moins 1
+  OutPut <- Test2 %>% select(c(TimeStamp,Energie,Journalier,Annuel))
+  return(OutPut)
 }
 #
+```
+```{r Evolution Eau, echo=FALSE,eval=TRUE,message=FALSE,warning=FALSE}
+Eau <- AllEnergie %>% filter (Energie %in% c("Eau")) 
+ConsoEau <- tail ( ConsoAnnuelle(Eau), 24)
+ConsoPrévue <- round((tail(ConsoEau$Annuel,1) ),0)
+gg <- ggplot() +
+geom_line(data = ConsoEau, aes(x = TimeStamp, y = Annuel, color = "Global Mobile")) +
+  #geom_line(data = ConsoEau, aes(x = TimeStamp, y = Annuel, color = "Prévision Annuelle")) +
+  geom_line(data = ConsoEau, aes(x = TimeStamp, y = Journalier, color = "Journalier")) +
+  labs(title = paste( "Eau - Consommation Projetée - m3: ", ConsoPrévue) )+
+  scale_x_date(date_breaks = "1 month", date_labels = "%Y-%m-%d") +
+  labs(y = "m3") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+  
+(gg)
+  
+
+```
+```{r Evolution Electricité, echo=FALSE,eval=TRUE,message=FALSE,warning=FALSE}
+AllCSVFileName="./Log_Energie.csv"
+
 
 # Je sélectionne ce qui m' intéresse
 Electricite <- AllEnergie %>% filter (Energie %in% c("CJour","CNuit","PJour","PNuit")) 
