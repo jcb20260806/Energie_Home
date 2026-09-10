@@ -57,7 +57,11 @@ ConsoAnnuelle <- function(Test){
   TestM1 <- tail(TestM1,nrow(TestM1)-1)
   Test <- tail(Test,nrow(Test)-1)
   Test$DeltaConso <- Test$Index - TestM1$Index
+  Test <- Test %>% mutate(Bug = ifelse(DeltaConso>0,"OK","Bug"))
+  print ( Test[Test$Bug == "Bug",])
   Test$DeltaTS <- difftime(Test$TimeStamp, TestM1$TimeStamp, units = "days")
+  Test <- Test %>% mutate(Bug = ifelse(DeltaTS>0,"OK","Bug"))
+  print ( Test[Test$Bug == "Bug",])
   Test <- Test %>% mutate(Journalier = DeltaConso*365.25/as.numeric(DeltaTS))
   Test <- Test %>% arrange(TimeStamp) %>%
             # on trouve l'index un an plus tôt
@@ -71,6 +75,8 @@ ConsoAnnuelle <- function(Test){
   # Journalier = consommation courante amenée à 365 jours
   # Annuel = Delta Index à Year moins 1
   OutPut <- Test2 %>% select(c(TimeStamp,Energie,Journalier,Annuel))
+  OutPut <- Test2 %>% select(c(TimeStamp,Energie,Journalier,Annuel,YM1))
+  OutPut$d <- OutPut$TimeStamp - OutPut$YM1
   return(OutPut)
 }
 #
@@ -93,7 +99,33 @@ geom_line(data = ConsoEau, aes(x = TimeStamp, y = Annuel, color = "Global Mobile
 
 ```
 ```{r Evolution Boiler, echo=FALSE,eval=TRUE,message=FALSE,warning=FALSE}
-Boiler <- AllEnergie %>% filter (Energie %in% c("Boiler")) 
+Boiler <- AllEnergie %>% filter (Energie %in% c("Boiler"))
+Test <- Boiler
+TestM1 <- lag(Test,1) # shift vers le bas
+  TestM1 <- tail(TestM1,nrow(TestM1)-1)
+  Test <- tail(Test,nrow(Test)-1)
+  Test$DeltaConso <- Test$Index - TestM1$Index
+  Test <- Test %>% mutate(Bug = ifelse(DeltaConso>0,"OK","Bug"))
+  print ( Test[Test$Bug == "Bug",])
+  Test$DeltaTS <- difftime(Test$TimeStamp, TestM1$TimeStamp, units = "days")
+  Test <- Test %>% mutate(Bug = ifelse(DeltaTS>0,"OK","Bug"))
+  print ( Test[Test$Bug == "Bug",])
+  Test <- Test %>% mutate(Journalier = DeltaConso*365.25/as.numeric(DeltaTS))
+  Test <- Test %>% # on trouve l'index un an plus tôt
+            mutate(timestamp_cible = TimeStamp %m-% years(1))
+  Test <- Test %>% mutate ( idx = findInterval(timestamp_cible, TimeStamp) ) 
+  # get Y moins 1
+  Test2 <- Test %>% filter (idx > 0 )
+  Test2$YM1 <- Test[Test2$idx,"TimeStamp"]
+  #Test2 <- Test2 %>% mutate (Bug = as.numeric(diff.difftime(TimeStamp,YM1,unit="days")))
+  #print ( Test2[Test2$Bug == 'Bug'])
+  Test2$IndexYM1 <- Test[Test2$idx,"Index"] 
+  Test2 <- Test2 %>% mutate ( DeltaT = as.numeric(TimeStamp-YM1) ) %>% 
+                              mutate (Annuel =( Index- IndexYM1)*365/DeltaT)
+  # Journalier = consommation courante amenée à 365 jours
+  # Annuel = Delta Index à Year moins 1
+  OutPut <- Test2 %>% select(c(TimeStamp,Energie,Journalier,Annuel,YM1))
+  OutPut$d <- OutPut$TimeStamp - OutPut$YM1
 ConsoBoiler <- tail ( ConsoAnnuelle(Boiler), 24)
 ConsoPrévue <- round((tail(ConsoBoiler$Annuel,1) ),0)
 gg <- ggplot() +
